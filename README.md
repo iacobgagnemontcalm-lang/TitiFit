@@ -37,25 +37,108 @@ synchronisation.
 Le suivi est continu : le profil, les résultats, l'XP et les achievements
 vivent dans un compte, pas dans une session.
 
-### Configurer Firebase
+### Connecter un projet Firebase
 
-1. Créer un projet sur [console.firebase.google.com](https://console.firebase.google.com) ;
-2. **Authentication → Sign-in method** : activer *E-mail/Mot de passe*
-   (et *Anonyme* si tu veux l'essai sans compte) ;
-3. **Firestore Database** : créer la base en mode production ;
-4. déployer les règles fournies : `firebase deploy --only firestore:rules` ;
-5. copier la config SDK dans `.env.local` :
+TitiFit utilise le **SDK JavaScript** de Firebase, pas `react-native-firebase`.
+Conséquence importante : il faut créer une application **Web** (`</>`) dans la
+console, et **aucun** `google-services.json` / `GoogleService-Info.plist` n'est
+nécessaire, même pour iOS et Android.
+
+**1. Récupérer la configuration**
+
+Console Firebase → ⚙️ *Paramètres du projet* → *Tes applications*.
+S'il n'y a pas encore d'app Web, clique sur l'icône `</>`, donne-lui un nom
+(« TitiFit »), et ignore l'étape « Firebase Hosting ». Tu obtiens un bloc :
+
+```js
+const firebaseConfig = {
+  apiKey: "AIzaSy…",
+  authDomain: "mon-projet.firebaseapp.com",
+  projectId: "mon-projet",
+  storageBucket: "mon-projet.firebasestorage.app",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abc123",
+};
+```
+
+**2. Le recopier dans `.env.local`**
+
+```bash
+cp .env.example .env.local
+```
 
 ```
-EXPO_PUBLIC_FIREBASE_API_KEY=...
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-EXPO_PUBLIC_FIREBASE_APP_ID=...
+EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSy…
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=mon-projet.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=mon-projet
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=mon-projet.firebasestorage.app
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
+EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abc123
 ```
 
-Les réglages affichent le backend actif et la liste des variables manquantes.
+Pas de guillemets, pas d'espaces autour du `=`. `.env.local` est ignoré par git.
+
+**3. Vérifier avant de lancer quoi que ce soit**
+
+```bash
+npm run check:firebase
+```
+
+Le script lit les fichiers `.env` comme le fait Expo et rapporte exactement ce
+que l'app verra, sans jamais afficher une clé en entier. Il détecte les erreurs
+courantes : app Android/iOS au lieu de Web, `authDomain` et `projectId` de deux
+projets différents, clé collée au mauvais endroit.
+
+**4. Activer les services dans la console**
+
+- *Authentication* → *Sign-in method* → activer **E-mail/Mot de passe**.
+  (Le mode *Anonyme* n'est pas requis : aucun écran ne l'utilise pour l'instant.)
+- *Firestore Database* → *Créer une base de données* → mode **production**,
+  région la plus proche de tes utilisateurs.
+
+**5. Déployer les règles de sécurité — avant le premier test**
+
+En mode production, Firestore refuse tout tant que les règles ne sont pas
+déployées. Sans cette étape, la première synchronisation échoue avec
+`permission-denied`.
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use --add          # choisir le projet, alias "default"
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+**6. Relancer Expo en vidant le cache**
+
+Les variables `EXPO_PUBLIC_*` sont **inlinées au moment du bundle** : un
+serveur déjà lancé ne les verra pas.
+
+```bash
+npx expo start --clear
+```
+
+**Vérifier que ça marche :** ouvre *Réglages* dans l'app. Le bloc « Compte &
+synchronisation » doit proposer *Créer un compte / se connecter* au lieu de
+*Comptes indisponibles*, et la liste des variables manquantes doit avoir
+disparu. Après un `sign-up`, un document apparaît dans `users/{uid}` côté
+console.
+
+### Dépannage
+
+| Symptôme | Cause la plus probable |
+|---|---|
+| « Comptes indisponibles » persiste | Serveur Expo non relancé avec `--clear`, ou fichier nommé `.env` au lieu de `.env.local` |
+| `auth/operation-not-allowed` | E-mail/Mot de passe pas activé dans *Authentication* |
+| `permission-denied` à la synchro | Règles non déployées (étape 5) |
+| `auth/unauthorized-domain` sur web | Ajouter le domaine dans *Authentication → Settings → Authorized domains* (`localhost` y est par défaut) |
+| `auth/network-request-failed` | Pas de réseau, ou `authDomain` incorrect |
+
+### Émulateurs (optionnel)
+
+`firebase.json` configure les émulateurs Auth et Firestore. `firebase emulators:start`
+les lance ; il faudra brancher `connectAuthEmulator` / `connectFirestoreEmulator`
+dans `src/services/backend/firebase/app.ts` pour les utiliser.
 
 ### Modèle Firestore
 

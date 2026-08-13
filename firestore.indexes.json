@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "publicCards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sex", "order": "ASCENDING" },
+        { "fieldPath": "overall", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "publicCards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "country", "order": "ASCENDING" },
+        { "fieldPath": "overall", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "publicCards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "city", "order": "ASCENDING" },
+        { "fieldPath": "overall", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
