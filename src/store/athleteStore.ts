@@ -63,6 +63,8 @@ interface AthleteStoreActions {
   /** Replaces local state with a remote snapshot (merged by `syncService`). */
   applySnapshot: (snapshot: AthleteSnapshot, uid: string) => void;
   markSynced: () => void;
+  /** Swaps device-local image paths for the durable URLs returned by upload. */
+  replaceImageUris: (user: User | null, results: TestResult[]) => void;
   toSnapshot: () => AthleteSnapshot;
 }
 
@@ -216,6 +218,12 @@ export const useAthleteStore = create<AthleteStore>()(
         }),
 
       markSynced: () => set({ dirty: false, removedResultIds: [] }),
+
+      replaceImageUris: (user, results) =>
+        set((state) => ({
+          user: user ?? state.user,
+          results,
+        })),
 
       toSnapshot: () => {
         const s = get();

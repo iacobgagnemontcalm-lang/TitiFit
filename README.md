@@ -7,7 +7,7 @@ performances, l'app produit un **Overall Rating /100**, des percentiles, un
 archétype d'athlète, des niveaux, de l'XP, des achievements et une carte
 d'athlète partageable.
 
-> État actuel : **Phase 2 complète.** Home, carte d'athlète, catégories,
+> État actuel : **Toutes les phases livrées.** Home, carte d'athlète, catégories,
 > détail de test, ADD RESULT de bout en bout, historique, progression,
 > classement, réglages, comptes Firebase + synchronisation.
 > Projet Firebase : `titifit-ff0a6`.
@@ -194,15 +194,21 @@ document.
 La logique de fusion est isolée dans `src/services/syncMerge.ts` (pure, sans
 import de store ni de réseau).
 
-### Limite connue : les images ne synchronisent pas
+### Images
 
-Les photos de profil et les photos jointes aux résultats sont stockées comme
-**URI locales de l'appareil** (`file://…`). Elles survivent aux redémarrages
-mais ne suivent pas d'un appareil à l'autre : sur un second appareil, le champ
-pointe vers un fichier qui n'existe pas. Le correctif est Firebase Storage —
-téléverser à l'enregistrement et stocker l'URL de téléchargement plutôt que le
-chemin local. Pas encore fait ; `storageBucket` est déjà dans la configuration
-pour le jour où on branche ça.
+Les photos de profil et de résultat sont téléversées vers Firebase Storage à
+la première synchronisation, puis le chemin local (`file://…`) est remplacé par
+l'URL de téléchargement — sans quoi une photo prise sur un téléphone pointerait
+vers un fichier inexistant sur tout autre appareil.
+
+L'échec d'un téléversement est volontairement non bloquant : une photo qui ne
+monte pas ne doit jamais empêcher les *données* de l'athlète de se synchroniser.
+Les règles sont dans `storage.rules` (8 Mo max, images seulement, écriture
+limitée à son propre préfixe).
+
+```bash
+firebase deploy --only storage
+```
 
 ### Changer de backend
 
@@ -373,8 +379,9 @@ consommation** — le disclaimer est sur la carte, et
 - [x] **Phase 3** — flow ADD RESULT de bout en bout avec résumé animé
 - [x] **Phase 2b** — Historique global filtrable, Réglages complets
 - [x] **Phase 2c** — Athlete Card partageable, Catégories, Détail de catégorie et de test, Progression (XP, achievements, journey), Leaderboard
-- [ ] **Phase 4** — Fastest Path (écran complet), Athlete VS, Challenges
-- [ ] **Phase 5** — Combine, Athlete Wrapped, Coach IA, intégrations Apple Health / Garmin / Strava
+- [x] **Phase 4** — Fastest Path (écran complet), Athlete VS, Challenges
+- [x] **Phase 5** — Combine, Athlete Wrapped, Coach explicable, couche d'import santé
+- [x] **Dette** — upload des images vers Firebase Storage
 
 ## Intégrations futures
 

@@ -28,7 +28,7 @@ import { useAthlete } from '@/hooks/useAthlete';
 import { calculateFastestPath } from '@/services/fastestPath';
 import { calculateTestRating } from '@/services/ratingEngine';
 import { useAthleteStore } from '@/store/athleteStore';
-import { colors, spacing } from '@/theme';
+import { alpha, colors, spacing } from '@/theme';
 import type { OfficialTestId, PersonalRecord } from '@/types';
 
 export function HomeScreen() {
@@ -229,6 +229,38 @@ export function HomeScreen() {
         </View>
       ) : null}
 
+      {/* ---- Explore ------------------------------------------------------ */}
+      <View style={styles.section}>
+        <SectionHeader title="Explorer" />
+        <View style={styles.explore}>
+          {[
+            { label: 'Ask Coach', icon: 'chatbubble-ellipses', route: '/coach', tint: colors.accent.primary },
+            { label: 'Athlete VS', icon: 'flash', route: '/versus', tint: colors.palette.magenta },
+            { label: 'Combine', icon: 'people', route: '/combine', tint: colors.palette.cyan },
+            { label: 'Wrapped', icon: 'gift', route: '/wrapped', tint: colors.palette.lime },
+          ].map((item) => (
+            <Pressable
+              key={item.route}
+              onPress={() => router.push(item.route as never)}
+              style={({ pressed }) => [
+                styles.exploreItem,
+                { borderColor: alpha(item.tint, 0.3) },
+                pressed && styles.gearPressed,
+              ]}
+            >
+              <Ionicons
+                name={item.icon as keyof typeof Ionicons.glyphMap}
+                size={18}
+                color={item.tint}
+              />
+              <Text variant="bodySm" color={colors.text.primary}>
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       {/* ---- Data provenance --------------------------------------------- */}
       <Card style={styles.section} padded>
         <Text variant="overline" color={colors.text.faint} upper>
@@ -263,4 +295,17 @@ const styles = StyleSheet.create({
   section: { marginTop: spacing.xxl },
   categories: { gap: spacing.sm },
   note: { marginTop: spacing.sm },
+  explore: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  exploreItem: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: colors.bg.card,
+  },
 });

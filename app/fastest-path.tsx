@@ -1,12 +1,3 @@
-import { ComingSoon } from '@/components/ui';
+import { FastestPathScreen } from '@/features/fastestPath/FastestPathScreen';
 
-export default function FastestPathScreen() {
-  return (
-    <ComingSoon
-      title="Fastest Path"
-      phase="Phase 4"
-      description="La liste complète des améliorations classées par gain d'Overall par unité d'effort."
-      icon="navigate-outline"
-    />
-  );
-}
+export default FastestPathScreen;

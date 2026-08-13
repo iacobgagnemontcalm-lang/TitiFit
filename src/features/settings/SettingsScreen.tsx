@@ -308,6 +308,17 @@ export function SettingsScreen() {
         </Card>
       </View>
 
+      {/* --- Connexions ------------------------------------------------------ */}
+      <View style={styles.section}>
+        <SectionHeader title="Connexions" subtitle="Apple Health, Garmin, Strava" />
+        <Button
+          label="Voir les connexions"
+          variant="secondary"
+          icon="link-outline"
+          onPress={() => router.push('/integrations')}
+        />
+      </View>
+
       {/* --- Zone dangereuse ------------------------------------------------ */}
       <View style={styles.section}>
         <SectionHeader title="Zone dangereuse" />

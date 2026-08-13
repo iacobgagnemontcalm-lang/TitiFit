@@ -89,7 +89,18 @@ export interface BackendAdapter {
   ): Promise<void>;
   publishCard(card: PublicCard): Promise<void>;
   fetchLeaderboard(limit?: number): Promise<PublicCard[]>;
+
+  /**
+   * Uploads a local image (`file://…`) and returns a durable URL.
+   * Implementations MUST return the input unchanged when they cannot store
+   * anything, so callers can always assign the result back.
+   */
+  uploadImage(uid: string, localUri: string, path: string): Promise<string>;
 }
+
+/** True for a device-local path that would not survive on another device. */
+export const isLocalUri = (uri?: string): boolean =>
+  uri != null && !/^https?:\/\//.test(uri);
 
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'error' | 'signed-out';
 

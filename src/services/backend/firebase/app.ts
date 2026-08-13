@@ -6,6 +6,7 @@ import {
   initializeFirestore,
   type Firestore,
 } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
 import { getFirebaseConfig } from './config';
@@ -18,6 +19,7 @@ import { getFirebaseConfig } from './config';
 let app: FirebaseApp | undefined;
 let auth: firebaseAuth.Auth | undefined;
 let db: Firestore | undefined;
+let bucket: FirebaseStorage | undefined;
 
 export function firebaseApp(): FirebaseApp {
   if (app) return app;
@@ -72,4 +74,9 @@ export function firestore(): Firestore {
     db = getFirestore(firebaseApp());
   }
   return db;
+}
+
+export function firebaseStorage(): FirebaseStorage {
+  if (!bucket) bucket = getStorage(firebaseApp());
+  return bucket;
 }

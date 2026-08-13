@@ -8,6 +8,7 @@ import {
   updateProfile,
   type User as FirebaseUser,
 } from 'firebase/auth';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import {
   collection,
   deleteDoc,
@@ -33,7 +34,7 @@ import type {
 } from '../types';
 import { BackendError } from '../types';
 import { isFirebaseConfigured } from './config';
-import { firebaseAuthInstance, firestore } from './app';
+import { firebaseAuthInstance, firebaseStorage, firestore } from './app';
 
 /**
  * Firestore layout
@@ -238,6 +239,23 @@ export class FirebaseBackend implements BackendAdapter {
 
   async publishCard(card: PublicCard): Promise<void> {
     await setDoc(doc(firestore(), 'publicCards', card.uid), clean(card), { merge: true });
+  }
+
+  /**
+   * Reads the local file into a blob and stores it under
+   * `users/{uid}/{path}`. Returns the input untouched on failure — an image
+   * that will not upload must never block a sync of the athlete's actual data.
+   */
+  async uploadImage(uid: string, localUri: string, path: string): Promise<string> {
+    try {
+      const response = await fetch(localUri);
+      const blob = await response.blob();
+      const objectRef = ref(firebaseStorage(), `users/${uid}/${path}`);
+      await uploadBytes(objectRef, blob, { contentType: blob.type || 'image/jpeg' });
+      return await getDownloadURL(objectRef);
+    } catch {
+      return localUri;
+    }
   }
 
   async fetchLeaderboard(max = 50): Promise<PublicCard[]> {

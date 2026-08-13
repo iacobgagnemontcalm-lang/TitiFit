@@ -6,6 +6,7 @@ import type { CategoryId } from '@/types';
 import { ageFromBirthDate } from '@/utils/date';
 
 import { computeAthleteState } from './athleteService';
+import { uploadPendingImages } from './imageSync';
 import { mergeSnapshots } from './syncMerge';
 import { levelFromTotalXP } from './xpEngine';
 
@@ -88,7 +89,17 @@ export async function pushNow(): Promise<void> {
   auth.setSync({ status: 'syncing' });
 
   try {
-    await backend.push(auth.session.uid, store.toSnapshot(), {
+    // Images first: a snapshot must never carry a `file://` path to the cloud.
+    const promoted = await uploadPendingImages(
+      auth.session.uid,
+      store.user,
+      store.results,
+    );
+    if (promoted.uploaded > 0) {
+      useAthleteStore.getState().replaceImageUris(promoted.user, promoted.results);
+    }
+
+    await backend.push(auth.session.uid, useAthleteStore.getState().toSnapshot(), {
       removedResultIds: store.removedResultIds,
     });
 

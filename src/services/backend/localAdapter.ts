@@ -69,4 +69,9 @@ export class LocalBackend implements BackendAdapter {
   async fetchLeaderboard(): Promise<PublicCard[]> {
     return [];
   }
+
+  /** No remote storage: the local path is the best we have. */
+  async uploadImage(_uid: string, localUri: string): Promise<string> {
+    return localUri;
+  }
 }

@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// TitiFit — règles Firebase Storage
+//
+// Chaque athlète écrit uniquement sous son propre préfixe. La lecture est
+// ouverte aux comptes authentifiés parce que les avatars apparaissent dans les
+// classements et dans Athlete VS.
+//
+// Déploiement :  firebase deploy --only storage
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   // 8 Mo max, images seulement.
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
