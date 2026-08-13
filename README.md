@@ -7,8 +7,10 @@ performances, l'app produit un **Overall Rating /100**, des percentiles, un
 archétype d'athlète, des niveaux, de l'XP, des achievements et une carte
 d'athlète partageable.
 
-> État actuel : **Home, comptes Firebase + synchronisation, ADD RESULT de bout
-> en bout, Historique et Réglages.** Projet Firebase : `titifit-ff0a6`.
+> État actuel : **Phase 2 complète.** Home, carte d'athlète, catégories,
+> détail de test, ADD RESULT de bout en bout, historique, progression,
+> classement, réglages, comptes Firebase + synchronisation.
+> Projet Firebase : `titifit-ff0a6`.
 
 ---
 
@@ -370,7 +372,7 @@ consommation** — le disclaimer est sur la carte, et
 - [x] **Phase 2a** — comptes Firebase, synchronisation cloud, Welcome / Sign in / Sign up / Onboarding
 - [x] **Phase 3** — flow ADD RESULT de bout en bout avec résumé animé
 - [x] **Phase 2b** — Historique global filtrable, Réglages complets
-- [ ] **Phase 2c** — Athlete Card partageable, Catégories, Détail de test, Progression, Leaderboard
+- [x] **Phase 2c** — Athlete Card partageable, Catégories, Détail de catégorie et de test, Progression (XP, achievements, journey), Leaderboard
 - [ ] **Phase 4** — Fastest Path (écran complet), Athlete VS, Challenges
 - [ ] **Phase 5** — Combine, Athlete Wrapped, Coach IA, intégrations Apple Health / Garmin / Strava
 
