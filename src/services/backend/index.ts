@@ -31,4 +31,12 @@ export const backendDiagnostics = () => ({
   adapter: getBackend().id,
   configured: isFirebaseConfigured(),
   missingKeys: missingFirebaseKeys(),
+  /**
+   * Surfaced in Settings so the athlete can confirm the *running bundle*
+   * actually carries the keys. `EXPO_PUBLIC_*` values are inlined at build
+   * time, and Metro caches transforms: restarting without `--clear` silently
+   * keeps the previous (often empty) values, which otherwise looks like a
+   * broken config.
+   */
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? null,
 });

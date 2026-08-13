@@ -116,26 +116,38 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 Le projet cible vient de `.firebaserc` (`titifit-ff0a6`), déjà versionné.
 
-**6. Relancer Expo en vidant le cache**
-
-Les variables `EXPO_PUBLIC_*` sont **inlinées au moment du bundle** : un
-serveur déjà lancé ne les verra pas.
+**6. Relancer Expo en vidant le cache — `--clear` est obligatoire**
 
 ```bash
 npx expo start --clear
 ```
 
+Les variables `EXPO_PUBLIC_*` sont **inlinées au moment de la transformation
+Babel**, et Metro met ces transformations en cache. Le cache ne tient pas
+compte de la valeur des variables : après avoir rempli `.env.local`, un
+redémarrage normal réutilise le bundle précédent, où les clés étaient encore
+vides.
+
+Le piège est silencieux — Expo affiche bien `env: load .env.local` et
+`env: export EXPO_PUBLIC_FIREBASE_...`, mais le bundle servi ne contient
+toujours rien. Vérifié : sans `--clear`, zéro occurrence des clés dans le
+bundle ; avec `--clear`, elles y sont.
+
+Même règle pour les exports : `npx expo export --clear`.
+
 **Vérifier que ça marche :** ouvre *Réglages* dans l'app. Le bloc « Compte &
 synchronisation » doit proposer *Créer un compte / se connecter* au lieu de
-*Comptes indisponibles*, et la liste des variables manquantes doit avoir
-disparu. Après un `sign-up`, un document apparaît dans `users/{uid}` côté
-console.
+*Comptes indisponibles*, et afficher **`Projet Firebase : titifit-ff0a6`**.
+Cette ligne lit la variable telle qu'elle est réellement présente dans le
+bundle en cours d'exécution : c'est la preuve que le cache a bien été vidé.
+Après un `sign-up`, un document apparaît dans `users/{uid}` côté console.
 
 ### Dépannage
 
 | Symptôme | Cause la plus probable |
 |---|---|
-| « Comptes indisponibles » persiste | Serveur Expo non relancé avec `--clear`, ou fichier nommé `.env` au lieu de `.env.local` |
+| « Comptes indisponibles » persiste malgré des clés correctes | **Cache Metro.** Relancer avec `npx expo start --clear`. `npm run check:firebase` peut afficher « complète et cohérente » alors que le bundle, lui, est périmé |
+| « Comptes indisponibles » et variables listées comme manquantes | Fichier nommé `.env` au lieu de `.env.local`, ou valeurs entre guillemets |
 | `auth/operation-not-allowed` | E-mail/Mot de passe pas activé dans *Authentication* |
 | `permission-denied` à la synchro | Règles non déployées (étape 5) |
 | `auth/unauthorized-domain` sur web | Ajouter le domaine dans *Authentication → Settings → Authorized domains* (`localhost` y est par défaut) |

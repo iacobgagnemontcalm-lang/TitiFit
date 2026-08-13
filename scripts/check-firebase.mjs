@@ -183,5 +183,10 @@ console.log('  → Configuration complète et cohérente. L\'app utilisera Fireb
 console.log('     Pense à: (1) activer E-mail/Mot de passe dans Authentication,');
 console.log('              (2) créer la base Firestore,');
 console.log('              (3) firebase deploy --only firestore:rules');
-console.log('     Puis relance avec: npx expo start --clear\n');
+console.log('');
+console.log('     IMPORTANT — relance avec:  npx expo start --clear');
+console.log('     Metro met en cache les valeurs inlinées: sans --clear, le bundle');
+console.log('     servi garde les anciennes (vides) et l\'app reste en mode local,');
+console.log('     même si ce script affiche que tout est correct.');
+console.log('     Contrôle final: Réglages doit afficher "Projet Firebase : ...".\n');
 process.exit(0);

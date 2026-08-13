@@ -142,18 +142,34 @@ export function SettingsScreen() {
             )}
           </View>
 
-          {!cloudEnabled ? (
-            <View style={styles.diagnostics}>
+          <View style={styles.diagnostics}>
+            {cloudEnabled ? (
+              // Proves the running bundle carries the keys: if this shows the
+              // wrong project (or nothing), Metro served a cached build and
+              // Expo needs restarting with `--clear`.
               <Text variant="caption" color={colors.text.faint}>
-                {`Backend actif : ${diagnostics.adapter}. Variables manquantes :`}
+                {`Projet Firebase : ${diagnostics.projectId ?? 'inconnu'}`}
               </Text>
-              {diagnostics.missingKeys.map((key) => (
-                <Text key={key} variant="statSm" color={colors.state.warning}>
-                  {key}
+            ) : (
+              <>
+                <Text variant="caption" color={colors.text.faint}>
+                  {`Backend actif : ${diagnostics.adapter}. Variables manquantes :`}
                 </Text>
-              ))}
-            </View>
-          ) : null}
+                {diagnostics.missingKeys.map((key) => (
+                  <Text key={key} variant="statSm" color={colors.state.warning}>
+                    {key}
+                  </Text>
+                ))}
+                <Text variant="caption" color={colors.text.faint} style={styles.hint}>
+                  Si tu viens d’ajouter tes clés : relance avec{' '}
+                  <Text variant="statSm" color={colors.state.warning}>
+                    npx expo start --clear
+                  </Text>
+                  . Sans --clear, Metro réutilise un bundle sans les variables.
+                </Text>
+              </>
+            )}
+          </View>
         </Card>
       </View>
 
@@ -339,6 +355,7 @@ const styles = StyleSheet.create({
     backgroundColor: alpha(colors.state.warning, 0.08),
   },
   diagnostics: { gap: 2, marginTop: spacing.md },
+  hint: { marginTop: spacing.sm },
   profileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
   profileCell: { minWidth: 92, gap: 2 },
   weightField: { marginTop: spacing.lg, marginBottom: spacing.lg },
