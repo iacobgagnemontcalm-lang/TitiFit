@@ -14,15 +14,87 @@ d'athlète partageable.
 ## Stack
 
 React Native · Expo SDK 57 · TypeScript · Expo Router · Zustand ·
-Reanimated 4 · react-native-svg · expo-linear-gradient
+Firebase (Auth + Firestore) · Reanimated 4 · react-native-svg ·
+expo-linear-gradient
 
 ## Démarrer
 
 ```bash
 npm install
-npm start          # puis i / a / w
-npm run typecheck  # tsc --noEmit
+cp .env.example .env.local   # puis remplir les clés Firebase (optionnel)
+npm start                    # puis i / a / w
+npm run typecheck            # tsc --noEmit
 ```
+
+**Sans clés Firebase, l'app démarre quand même** : elle bascule sur le backend
+local (AsyncStorage) et les comptes sont désactivés. Rien n'est bloqué, sauf la
+synchronisation.
+
+---
+
+## Comptes & synchronisation
+
+Le suivi est continu : le profil, les résultats, l'XP et les achievements
+vivent dans un compte, pas dans une session.
+
+### Configurer Firebase
+
+1. Créer un projet sur [console.firebase.google.com](https://console.firebase.google.com) ;
+2. **Authentication → Sign-in method** : activer *E-mail/Mot de passe*
+   (et *Anonyme* si tu veux l'essai sans compte) ;
+3. **Firestore Database** : créer la base en mode production ;
+4. déployer les règles fournies : `firebase deploy --only firestore:rules` ;
+5. copier la config SDK dans `.env.local` :
+
+```
+EXPO_PUBLIC_FIREBASE_API_KEY=...
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+EXPO_PUBLIC_FIREBASE_APP_ID=...
+```
+
+Les réglages affichent le backend actif et la liste des variables manquantes.
+
+### Modèle Firestore
+
+```
+users/{uid}                      profil + réglages + updatedAt
+users/{uid}/results/{resultId}   un document par résultat
+users/{uid}/xp/{txId}            un document par transaction d'XP
+users/{uid}/achievements/{id}    un document par achievement débloqué
+publicCards/{uid}                projection publique (classements, Athlete VS)
+```
+
+Des sous-collections plutôt qu'un gros document : les écritures restent
+incrémentales et l'historique ne bute jamais sur la limite de 1 Mo par
+document.
+
+### Stratégie de synchronisation
+
+- **Offline-first.** AsyncStorage est toujours la copie de travail ; le réseau
+  n'est qu'une réconciliation d'arrière-plan. Perdre le signal ne bloque
+  jamais l'interface.
+- **Fusion, pas écrasement.** Résultats, XP et achievements sont unionés par
+  id : enregistrer hors ligne sur un téléphone puis ouvrir l'app sur une
+  tablette conserve les deux ensembles. Le profil et les réglages sont
+  résolus par `updatedAt` — la dernière modification gagne.
+- **Les données démo ne montent jamais.** Un profil `isDemo` est jeté dès
+  qu'un vrai compte se connecte.
+- **Écriture débouncée** (2,5 s) après chaque mutation, plus un bouton
+  « Synchroniser maintenant » dans les réglages.
+- **Profil public opt-out.** `settings.publicProfile` à false ⇒ la carte
+  publique n'est jamais écrite.
+
+La logique de fusion est isolée dans `src/services/syncMerge.ts` (pure, sans
+import de store ni de réseau).
+
+### Changer de backend
+
+Tout passe par `BackendAdapter` (`src/services/backend/types.ts`). Passer à
+Supabase = écrire une classe et ajouter une branche dans
+`src/services/backend/index.ts`. Aucun écran ne connaît Firebase.
 
 ---
 
@@ -43,6 +115,7 @@ src/
   benchmarkEngine/       Percentiles & inversion — couche remplaçable
   services/              Moteurs purs (rating, XP, streak, beer, path…)
   store/                 Zustand + persistance AsyncStorage
+  services/backend/      BackendAdapter: local (hors ligne) + Firebase
   hooks/                 useAthlete (état dérivé mémoïsé)
   components/ui/         Primitives (Text, Card, RatingCircle, Badges…)
   components/cards/      Cartes composites (OverallHero, XPCard…)
@@ -182,16 +255,16 @@ consommation** — le disclaimer est sur la carte, et
 
 - [x] **Phase 1** — architecture, thème, types, navigation, données mock, `benchmarkEngine`, `ratingEngine`
 - [x] **Phase 1b** — écran Home complet
-- [ ] **Phase 2** — Athlete Card, Catégories, Détail de test, Add Result, Progression, Leaderboard
-- [ ] **Phase 3** — flow ADD RESULT branché de bout en bout avec résumé animé
-- [ ] **Phase 4** — Fastest Path (écran complet), Athlete VS, Challenges, Settings
+- [x] **Phase 2a** — comptes Firebase, synchronisation cloud, Welcome / Sign in / Sign up / Onboarding
+- [x] **Phase 3** — flow ADD RESULT de bout en bout avec résumé animé
+- [x] **Phase 2b** — Historique global filtrable, Réglages complets
+- [ ] **Phase 2c** — Athlete Card partageable, Catégories, Détail de test, Progression, Leaderboard
+- [ ] **Phase 4** — Fastest Path (écran complet), Athlete VS, Challenges
 - [ ] **Phase 5** — Combine, Athlete Wrapped, Coach IA, intégrations Apple Health / Garmin / Strava
 
-Le pipeline ADD RESULT (Phase 3) est **déjà implémenté et testé** dans
-`addResultFlow.ts` — il ne manque que l'écran de saisie.
+## Intégrations futures
 
-## Backend futur
-
-Le prototype ne dépend d'aucun backend. Trois coutures sont prévues :
-`BenchmarkProvider` (statistiques), le store Zustand (persistance) et
-`TestResult.calories` (données importées d'Apple Health / Garmin / Strava).
+Trois coutures sont déjà en place : `BenchmarkProvider` (statistiques),
+`BackendAdapter` (comptes et stockage) et `TestResult.calories` (données
+importées d'Apple Health / Garmin / Strava, qui remplaceront l'estimation MET
+du `beerEngine`).

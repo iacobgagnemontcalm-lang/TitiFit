@@ -35,6 +35,10 @@ export interface User {
   units: UnitPreferences;
   location?: UserLocation;
   createdAt: string;
+  /** Last local edit — used to resolve profile conflicts against the cloud. */
+  updatedAt?: string;
+  /** Set once the profile is bound to a backend account. */
+  remoteUid?: string;
 }
 
 /** A dated body-weight entry, so ratios can be recomputed historically. */

@@ -172,32 +172,51 @@ export function nextTierThreshold(overall: number): { tier: CardTier; at: number
 // Athlete type
 // ---------------------------------------------------------------------------
 
+/** The specialist archetype that names each category, used as a fallback. */
+const ARCHETYPE_BY_TOP_CATEGORY: Record<CategoryId, AthleteTypeId> = {
+  strength: 'powerhouse',
+  bodyweight: 'gymnast',
+  hybrid: 'workhorse',
+  speed: 'speedster',
+  endurance: 'engine',
+};
+
+/** Categories an archetype is *about* — the ones carrying its top emphasis. */
+function primaryCategories(emphasis: Partial<Record<CategoryId, number>>): CategoryId[] {
+  const keys = Object.keys(emphasis) as CategoryId[];
+  if (keys.length === 0) return [];
+  const max = Math.max(...keys.map((k) => emphasis[k] ?? 0));
+  if (max < 0.85) return [];
+  return keys.filter((k) => (emphasis[k] ?? 0) >= max - 0.001);
+}
+
 /**
  * Matched on profile *shape*: each category's deviation from the athlete's own
- * mean is scored against the archetype's emphasis vector. Spread gates keep
- * specialists out of balanced profiles and vice-versa.
+ * mean is scored against the archetype's emphasis vector.
+ *
+ * Two gates keep the result legible:
+ *  - spread gates separate specialists from balanced profiles;
+ *  - an archetype's primary categories must actually be the athlete's top
+ *    ones. Without this, negative emphasis terms let "weak at speed" outweigh
+ *    "strongest at endurance", and the app would name a Powerhouse whose best
+ *    category is running.
  */
 export function calculateAthleteType(
   categories: Record<CategoryId, CategoryRating>,
   overall: number,
 ): AthleteTypeId {
-  const values = CATEGORY_ORDER.map((id) => categories[id].rating).filter(
-    (r): r is number => r != null,
-  );
+  const rated = CATEGORY_ORDER.filter((id) => categories[id].rating != null);
+  const values = rated.map((id) => categories[id].rating!);
   if (values.length === 0) return 'unranked';
+
+  const ranked = [...rated].sort(
+    (a, b) => (categories[b].rating ?? 0) - (categories[a].rating ?? 0),
+  );
+  const topCategory = ranked[0];
+
+  // Fewer than three categories is not enough signal for a shape.
   if (values.length < 3) {
-    // Not enough signal to call a shape — name the standout instead.
-    const best = CATEGORY_ORDER.filter((id) => categories[id].rating != null).sort(
-      (a, b) => (categories[b].rating ?? 0) - (categories[a].rating ?? 0),
-    )[0];
-    const byCategory: Record<CategoryId, AthleteTypeId> = {
-      strength: 'powerhouse',
-      bodyweight: 'gymnast',
-      hybrid: 'workhorse',
-      speed: 'speedster',
-      endurance: 'engine',
-    };
-    return best ? byCategory[best] : 'unranked';
+    return topCategory ? ARCHETYPE_BY_TOP_CATEGORY[topCategory] : 'unranked';
   }
 
   const avg = mean(values);
@@ -209,7 +228,7 @@ export function calculateAthleteType(
     return acc;
   }, {} as Record<CategoryId, number>);
 
-  let bestType: AthleteTypeId = 'all_rounder';
+  let bestType: AthleteTypeId | null = null;
   let bestScore = Number.NEGATIVE_INFINITY;
 
   for (const type of ATHLETE_TYPES) {
@@ -217,12 +236,19 @@ export function calculateAthleteType(
     if (type.maxSpread != null && spread > type.maxSpread) continue;
     if (type.minSpread != null && spread < type.minSpread) continue;
 
+    const primaries = primaryCategories(type.emphasis);
+    const topSlice = ranked.slice(0, Math.max(1, primaries.length));
+    if (primaries.some((id) => !topSlice.includes(id))) continue;
+
     const emphasisKeys = Object.keys(type.emphasis) as CategoryId[];
-    // A balanced archetype has no emphasis vector: score it on tightness.
+    // A balanced archetype has no emphasis vector. It is scored on how far
+    // *inside* its own tightness ceiling the profile sits, so the archetype
+    // with the stricter requirements (Hybrid Elite) outranks the looser one
+    // (All-Rounder) whenever both qualify.
     const score = emphasisKeys.length
       ? emphasisKeys.reduce((s, id) => s + (type.emphasis[id] ?? 0) * deviations[id], 0) /
         Math.sqrt(emphasisKeys.length)
-      : Math.max(0, 6 - spread);
+      : (type.maxSpread ?? 6) - spread;
 
     if (score > bestScore) {
       bestScore = score;
@@ -230,7 +256,8 @@ export function calculateAthleteType(
     }
   }
 
-  return bestType;
+  if (bestType) return bestType;
+  return topCategory ? ARCHETYPE_BY_TOP_CATEGORY[topCategory] : 'all_rounder';
 }
 
 export const athleteTypeInfo = (id: AthleteTypeId) => ATHLETE_TYPE_BY_ID[id];

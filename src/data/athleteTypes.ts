@@ -49,7 +49,7 @@ export const ATHLETE_TYPES: AthleteTypeDefinition[] = [
     description:
       'Tu performes quand ça fait mal. Sous fatigue, ton rendement baisse moins vite que celui des autres.',
     emphasis: { hybrid: 1, endurance: 0.4, bodyweight: 0.3, strength: 0, speed: -0.2 },
-    minSpread: 5,
+    minSpread: 6,
     icon: 'flame',
   },
   {
@@ -58,7 +58,7 @@ export const ATHLETE_TYPES: AthleteTypeDefinition[] = [
     description:
       'Puissant, polyvalent et capable de maintenir de bonnes performances sous fatigue.',
     emphasis: { strength: 0.9, hybrid: 0.9, bodyweight: 0.3, speed: 0, endurance: -0.3 },
-    minSpread: 4,
+    minSpread: 6,
     icon: 'flash',
   },
   {
@@ -75,7 +75,10 @@ export const ATHLETE_TYPES: AthleteTypeDefinition[] = [
     name: 'The Hybrid Elite',
     description:
       'Un profil complet à haut niveau : fort, rapide, endurant et redoutable sous fatigue.',
-    emphasis: { hybrid: 0.6, strength: 0.4, endurance: 0.4, speed: 0.3, bodyweight: 0.3 },
+    // No emphasis vector on purpose: like The All-Rounder, this archetype is
+    // about the *absence* of a weak spot. The difference is `minOverall` —
+    // it is All-Rounder earned at elite level.
+    emphasis: {},
     maxSpread: 8,
     minOverall: 85,
     icon: 'trophy',

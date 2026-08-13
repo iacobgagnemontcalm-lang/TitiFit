@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// TitiFit — règles Firestore
+//
+// Principe : chaque athlète est seul maître de ses documents privés. Les cartes
+// publiques sont lisibles par tous les utilisateurs authentifiés (classements,
+// Athlete VS), mais chacun ne peut écrire que la sienne.
+//
+// Déploiement :  firebase deploy --only firestore:rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // --- Données privées de l'athlète -------------------------------------
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /results/{resultId} {
+        allow read, write: if isOwner(uid);
+      }
+      match /xp/{txId} {
+        allow read, write: if isOwner(uid);
+      }
+      match /achievements/{achievementId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // --- Cartes publiques (classements, Athlete VS, Combine) --------------
+    match /publicCards/{uid} {
+      // Lecture ouverte aux comptes authentifiés seulement : un profil qui a
+      // désactivé `publicProfile` n'est simplement jamais écrit ici.
+      allow read: if request.auth != null;
+      allow write: if isOwner(uid)
+                   && request.resource.data.uid == uid
+                   && request.resource.data.keys().hasAll(['uid', 'username', 'updatedAt']);
+    }
+
+    // Tout le reste est refusé par défaut.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

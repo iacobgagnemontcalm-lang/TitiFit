@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   BeerEarnedCard,
@@ -98,12 +98,13 @@ export function HomeScreen() {
             Découvre quel athlète tu es.
           </Text>
         </View>
-        <Ionicons
-          name="settings-outline"
-          size={20}
-          color={colors.text.faint}
+        <Pressable
           onPress={() => router.push('/settings')}
-        />
+          hitSlop={12}
+          style={({ pressed }) => [styles.gear, pressed && styles.gearPressed]}
+        >
+          <Ionicons name="settings-outline" size={20} color={colors.text.secondary} />
+        </Pressable>
       </View>
 
       {/* ---- Overall hero ---------------------------------------------- */}
@@ -254,6 +255,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   greetingText: { gap: 2, flex: 1 },
+  gear: { padding: spacing.xs },
+  gearPressed: { opacity: 0.6 },
   hero: { alignItems: 'center', gap: spacing.md, marginBottom: spacing.xl },
   simBadge: { marginTop: spacing.xs },
   tiles: { flexDirection: 'row', gap: spacing.sm },
