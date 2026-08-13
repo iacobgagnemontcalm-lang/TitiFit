@@ -218,6 +218,67 @@ Supabase = écrire une classe et ajouter une branche dans
 
 ---
 
+## Héberger la version web
+
+Expo exporte une SPA statique. Le projet Firebase héberge déjà l'auth et la
+base : autant lui donner aussi le site.
+
+```bash
+npm run deploy:web
+```
+
+Ce qui revient à `expo export --clear --platform web` puis
+`firebase deploy --only hosting`. Le site sort sur :
+
+- `https://titifit-ff0a6.web.app`
+- `https://titifit-ff0a6.firebaseapp.com`
+
+Ces deux domaines sont **déjà autorisés** dans Firebase Authentication quand on
+utilise Firebase Hosting — rien à ajouter pour que la connexion fonctionne.
+
+### Pourquoi ces réglages dans `firebase.json`
+
+- **`rewrites` vers `/index.html`** — l'app est une SPA. Sans cette règle,
+  ouvrir directement `titifit.web.app/coach` renverrait un 404 : le fichier
+  n'existe pas, c'est le routeur qui crée la page côté client.
+- **Cache immuable sur `/_expo/**`** — ces fichiers portent un hash dans leur
+  nom, ils ne changent jamais.
+- **`no-cache` sur `/index.html`** — sinon un déploiement continue de servir
+  l'ancien bundle pendant des heures.
+
+### Prévisualiser avant de déployer
+
+```bash
+npm run build:web
+npm run preview:web     # http://localhost:3000
+```
+
+### Ce que la version web ne fait pas
+
+C'est une app mobile servie dans un navigateur, et elle est cadrée à une
+largeur de téléphone (`WebFrame`) plutôt qu'étirée sur tout l'écran.
+
+| Fonction | Sur le web |
+|---|---|
+| Retour haptique | silencieusement ignoré |
+| Choisir une photo | ouvre le sélecteur de fichiers du navigateur |
+| Partager | dépend de `navigator.share` — absent sur la plupart des navigateurs desktop |
+| Données locales | stockées par navigateur : un autre navigateur = un autre appareil, tant qu'on n'est pas connecté |
+
+⚠️ Les clés `EXPO_PUBLIC_FIREBASE_*` sont inlinées dans le bundle publié. C'est
+attendu : une clé API Firebase Web est un identifiant public, la sécurité
+repose sur les règles Firestore et Storage, pas sur le secret de la clé.
+
+### Alternatives
+
+`dist/` est un dossier statique ordinaire : Netlify, Vercel, Cloudflare Pages
+ou GitHub Pages fonctionnent aussi. Dans tous les cas il faut (1) une règle de
+réécriture SPA vers `index.html`, et (2) ajouter le domaine dans
+*Firebase Authentication → Settings → Authorized domains*, sinon la connexion
+échouera en `auth/unauthorized-domain`.
+
+---
+
 ## Architecture
 
 ```

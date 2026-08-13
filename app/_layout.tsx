@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { WebFrame } from '@/components/navigation/WebFrame';
 import { startSync } from '@/services/syncService';
 import { useAthleteStore } from '@/store/athleteStore';
 import { useAuthStore } from '@/store/authStore';
@@ -52,25 +53,27 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar style="light" />
-        <View style={styles.root}>
-          {ready && (resolved || !cloudEnabled) ? (
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.bg.base },
-                animation: 'fade',
-              }}
-            >
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="result-summary" options={{ presentation: 'modal' }} />
-            </Stack>
-          ) : (
-            <View style={styles.loading}>
-              <ActivityIndicator color={colors.accent.primary} />
-            </View>
-          )}
-        </View>
+        <WebFrame>
+          <View style={styles.root}>
+            {ready && (resolved || !cloudEnabled) ? (
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.bg.base },
+                  animation: 'fade',
+                }}
+              >
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="result-summary" options={{ presentation: 'modal' }} />
+              </Stack>
+            ) : (
+              <View style={styles.loading}>
+                <ActivityIndicator color={colors.accent.primary} />
+              </View>
+            )}
+          </View>
+        </WebFrame>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

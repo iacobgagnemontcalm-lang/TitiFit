@@ -9,7 +9,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "check:firebase": "node scripts/check-firebase.mjs"
+    "check:firebase": "node scripts/check-firebase.mjs",
+    "build:web": "expo export --clear --platform web --output-dir dist",
+    "preview:web": "npx serve -s dist",
+    "deploy:web": "npm run build:web && firebase deploy --only hosting"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.9",
