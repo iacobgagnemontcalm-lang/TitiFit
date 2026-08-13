@@ -220,31 +220,77 @@ Supabase = écrire une classe et ajouter une branche dans
 
 ## Héberger la version web
 
-Expo exporte une SPA statique. Le projet Firebase héberge déjà l'auth et la
-base : autant lui donner aussi le site.
+Expo exporte une SPA statique dans `dist/`. Deux cibles sont configurées ;
+les deux ont été testées.
+
+| | Firebase Hosting | GitHub Pages |
+|---|---|---|
+| URL | `titifit-ff0a6.web.app` | `iacobgagnemontcalm-lang.github.io/TitiFit/` |
+| Déploiement | `npm run deploy:web` | automatique à chaque push sur `main` |
+| Outils requis | Firebase CLI + login | aucun |
+| Connexion Firebase | **marche d'emblée** | domaine à autoriser à la main |
+| Routes profondes | vraies réécritures | contournement via `404.html` |
+
+**Recommandation : commence par Firebase.** Pas pour la simplicité du
+déploiement — les deux sont simples — mais parce que `*.web.app` est déjà dans
+les domaines autorisés de Firebase Authentication. Sur GitHub Pages, oublier
+cette étape fait échouer la connexion en `auth/unauthorized-domain`, et l'erreur
+n'a rien d'évident.
+
+---
+
+### Option A — Firebase Hosting
+
+**Une seule fois :**
+
+1. Activer Hosting dans la console :
+   [console.firebase.google.com/u/0/project/titifit-ff0a6/hosting](https://console.firebase.google.com/u/0/project/titifit-ff0a6/hosting)
+   → *Commencer*, puis passer toutes les étapes CLI (déjà faites dans le dépôt).
+2. Installer et se connecter :
+   ```bash
+   npm install -g firebase-tools
+   firebase login
+   ```
+
+**À chaque fois :**
 
 ```bash
 npm run deploy:web
 ```
 
-Ce qui revient à `expo export --clear --platform web` puis
-`firebase deploy --only hosting`. Le site sort sur :
+C'est-à-dire : `expo export --clear --platform web` puis
+`firebase deploy --only hosting`. La CLI affiche l'URL à la fin.
 
-- `https://titifit-ff0a6.web.app`
-- `https://titifit-ff0a6.firebaseapp.com`
+Le projet cible vient de `.firebaserc`, déjà versionné — pas de `firebase use`.
 
-Ces deux domaines sont **déjà autorisés** dans Firebase Authentication quand on
-utilise Firebase Hosting — rien à ajouter pour que la connexion fonctionne.
+### Option B — GitHub Pages
 
-### Pourquoi ces réglages dans `firebase.json`
+**Une seule fois :**
 
-- **`rewrites` vers `/index.html`** — l'app est une SPA. Sans cette règle,
-  ouvrir directement `titifit.web.app/coach` renverrait un 404 : le fichier
-  n'existe pas, c'est le routeur qui crée la page côté client.
-- **Cache immuable sur `/_expo/**`** — ces fichiers portent un hash dans leur
-  nom, ils ne changent jamais.
-- **`no-cache` sur `/index.html`** — sinon un déploiement continue de servir
-  l'ancien bundle pendant des heures.
+1. *Settings → Pages* → **Source : GitHub Actions**
+2. *Settings → Secrets and variables → Actions* → ajouter les six secrets :
+   `EXPO_PUBLIC_FIREBASE_API_KEY`, `_AUTH_DOMAIN`, `_PROJECT_ID`,
+   `_STORAGE_BUCKET`, `_MESSAGING_SENDER_ID`, `_APP_ID`
+   (mêmes valeurs que `.env.local` ; sans eux le site se déploie quand même,
+   mais en mode local sans comptes)
+3. *Firebase Authentication → Settings → Authorized domains* → ajouter
+   `iacobgagnemontcalm-lang.github.io`
+
+**Ensuite :** chaque push sur `main` déploie tout seul
+(`.github/workflows/deploy-pages.yml`), ou *Actions → Deploy web to GitHub
+Pages → Run workflow*.
+
+Trois particularités de Pages sont gérées dans le workflow :
+
+- **Sous-chemin.** Le site vit sous `/TitiFit/`, pas à la racine, donc le build
+  passe `EXPO_BASE_URL=/TitiFit` (voir `app.config.ts`) pour préfixer chaque
+  asset. Sans ça, la page charge mais le bundle renvoie 404.
+- **Pas de réécriture.** `index.html` est copié en `404.html` : Pages sert ce
+  fichier pour toute route inconnue, l'app démarre et le routeur reprend la
+  main.
+- **Jekyll.** Pages ignore les dossiers commençant par `_` — donc `_expo/`,
+  c'est-à-dire le bundle entier, disparaîtrait silencieusement. Un fichier
+  `.nojekyll` le désactive.
 
 ### Prévisualiser avant de déployer
 
@@ -255,27 +301,19 @@ npm run preview:web     # http://localhost:3000
 
 ### Ce que la version web ne fait pas
 
-C'est une app mobile servie dans un navigateur, et elle est cadrée à une
-largeur de téléphone (`WebFrame`) plutôt qu'étirée sur tout l'écran.
+C'est une app mobile servie dans un navigateur, cadrée à une largeur de
+téléphone (`WebFrame`) plutôt qu'étirée sur tout l'écran.
 
 | Fonction | Sur le web |
 |---|---|
 | Retour haptique | silencieusement ignoré |
 | Choisir une photo | ouvre le sélecteur de fichiers du navigateur |
 | Partager | dépend de `navigator.share` — absent sur la plupart des navigateurs desktop |
-| Données locales | stockées par navigateur : un autre navigateur = un autre appareil, tant qu'on n'est pas connecté |
+| Données locales | par navigateur : Chrome et Safari = deux appareils distincts tant qu'on n'est pas connecté |
 
 ⚠️ Les clés `EXPO_PUBLIC_FIREBASE_*` sont inlinées dans le bundle publié. C'est
-attendu : une clé API Firebase Web est un identifiant public, la sécurité
-repose sur les règles Firestore et Storage, pas sur le secret de la clé.
-
-### Alternatives
-
-`dist/` est un dossier statique ordinaire : Netlify, Vercel, Cloudflare Pages
-ou GitHub Pages fonctionnent aussi. Dans tous les cas il faut (1) une règle de
-réécriture SPA vers `index.html`, et (2) ajouter le domaine dans
-*Firebase Authentication → Settings → Authorized domains*, sinon la connexion
-échouera en `auth/unauthorized-domain`.
+attendu : une clé API Firebase Web est un identifiant public, la sécurité repose
+sur les règles Firestore et Storage, pas sur le secret de la clé.
 
 ---
 
