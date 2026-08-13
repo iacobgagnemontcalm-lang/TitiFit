@@ -22,7 +22,14 @@ expo-linear-gradient
 
 ## Démarrer
 
+**Node 20.19.4 minimum** (Expo SDK 57). Sur une version antérieure, l'échec est
+obscur — `util.parseEnv` n'existe pas avant Node 20.12, donc Expo plante sur
+« parseEnv is not a function » en lisant `.env.local`, ce qui laisse croire à un
+fichier mal formé. `engines` + `engine-strict` font maintenant échouer
+l'installation tout de suite, avec un message clair.
+
 ```bash
+node -v                      # doit afficher v20.19.4 ou plus
 npm install
 cp .env.example .env.local   # puis remplir les clés Firebase (optionnel)
 npm start                    # puis i / a / w
