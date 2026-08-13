@@ -129,6 +129,28 @@ if (authDomain && projectId && !authDomain.startsWith(`${projectId}.`)) {
 if (appId && !/^\d+:\d+:(web|android|ios):/.test(appId)) {
   warnings.push('appId ne ressemble pas au format "1:123456789:web:abc123".');
 }
+const bucket = found.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET;
+if (bucket && projectId && !bucket.startsWith(`${projectId}.`)) {
+  warnings.push(
+    `storageBucket ("${bucket}") ne commence pas par le projectId ("${projectId}").`,
+  );
+}
+if (bucket && !/\.(firebasestorage\.app|appspot\.com)$/.test(bucket)) {
+  warnings.push(
+    `storageBucket ("${bucket}") devrait finir par .firebasestorage.app (projets récents) ` +
+      'ou .appspot.com (projets plus anciens) — copie la valeur exacte de la console.',
+  );
+}
+// appId a la forme "1:<numéro de projet>:web:<hash>" — le numéro de projet
+// est le deuxième segment, et c'est exactement le messagingSenderId.
+const senderId = found.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+const appIdSenderSegment = appId?.split(':')[1];
+if (senderId && appIdSenderSegment && senderId !== appIdSenderSegment) {
+  warnings.push(
+    `messagingSenderId ("${senderId}") ne correspond pas au numéro de projet ` +
+      `contenu dans l'appId ("${appIdSenderSegment}") : deux projets mélangés?`,
+  );
+}
 if (appId && !appId.includes(':web:')) {
   warnings.push(
     'appId n\'est pas une application "web". TitiFit utilise le SDK JS Firebase : ' +

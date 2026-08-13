@@ -7,7 +7,8 @@ performances, l'app produit un **Overall Rating /100**, des percentiles, un
 archétype d'athlète, des niveaux, de l'XP, des achievements et une carte
 d'athlète partageable.
 
-> État actuel : **Phase 1 terminée + écran Home fonctionnel.**
+> État actuel : **Home, comptes Firebase + synchronisation, ADD RESULT de bout
+> en bout, Historique et Réglages.** Projet Firebase : `titifit-ff0a6`.
 
 ---
 
@@ -67,16 +68,21 @@ const firebaseConfig = {
 cp .env.example .env.local
 ```
 
+Le fichier est déjà pré-rempli pour le projet **`titifit-ff0a6`** : `projectId`,
+`authDomain` et `storageBucket` se déduisent de l'ID de projet. Il ne reste que
+trois champs à coller depuis la console :
+
 ```
 EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSy…
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=mon-projet.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=mon-projet
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=mon-projet.firebasestorage.app
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abc123
 ```
 
 Pas de guillemets, pas d'espaces autour du `=`. `.env.local` est ignoré par git.
+
+`.firebaserc` est versionné avec le projet, donc `firebase deploy` fonctionne
+sans `firebase use`. L'ID de projet n'est pas un secret : il est de toute façon
+inclus dans le bundle.
 
 **3. Vérifier avant de lancer quoi que ce soit**
 
@@ -105,9 +111,10 @@ déployées. Sans cette étape, la première synchronisation échoue avec
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase use --add          # choisir le projet, alias "default"
 firebase deploy --only firestore:rules,firestore:indexes
 ```
+
+Le projet cible vient de `.firebaserc` (`titifit-ff0a6`), déjà versionné.
 
 **6. Relancer Expo en vidant le cache**
 
@@ -172,6 +179,16 @@ document.
 
 La logique de fusion est isolée dans `src/services/syncMerge.ts` (pure, sans
 import de store ni de réseau).
+
+### Limite connue : les images ne synchronisent pas
+
+Les photos de profil et les photos jointes aux résultats sont stockées comme
+**URI locales de l'appareil** (`file://…`). Elles survivent aux redémarrages
+mais ne suivent pas d'un appareil à l'autre : sur un second appareil, le champ
+pointe vers un fichier qui n'existe pas. Le correctif est Firebase Storage —
+téléverser à l'enregistrement et stocker l'URL de téléchargement plutôt que le
+chemin local. Pas encore fait ; `storageBucket` est déjà dans la configuration
+pour le jour où on branche ça.
 
 ### Changer de backend
 

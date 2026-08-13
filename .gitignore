@@ -40,6 +40,8 @@ yarn-error.*
 /ios
 /android
 
-# Firebase (identifiant de projet local)
-.firebaserc
+# Firebase
+# .firebaserc EST versionné : l'ID de projet n'est pas un secret et il est
+# de toute façon inclus dans le bundle. Le versionner évite un `firebase use`
+# à chaque clone.
 .firebase/
