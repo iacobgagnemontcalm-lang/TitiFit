@@ -2,10 +2,15 @@
 
 **Découvre quel athlète tu es.**
 
-Application mobile de profil athlétique gamifiée : l'utilisateur entre ses
+**Web app** de profil athlétique gamifiée : l'utilisateur entre ses
 performances, l'app produit un **Overall Rating /100**, des percentiles, un
 archétype d'athlète, des niveaux, de l'XP, des achievements et une carte
 d'athlète partageable.
+
+Elle s'ouvre dans un navigateur — rien à installer depuis un store — et elle est
+pensée pour le **téléphone** : mise en page en colonne, barre d'onglets basse,
+zones sûres de l'encoche gérées. C'est une **PWA** : ajoutée à l'écran d'accueil,
+elle s'ouvre en plein écran, sans barre d'URL, et démarre même hors ligne.
 
 > État actuel : **Toutes les phases livrées.** Home, carte d'athlète, catégories,
 > détail de test, ADD RESULT de bout en bout, historique, progression,
@@ -16,7 +21,8 @@ d'athlète partageable.
 
 ## Stack
 
-React Native · Expo SDK 57 · TypeScript · Expo Router · Zustand ·
+React Native Web · Expo SDK 57 (**cible web uniquement**) · TypeScript ·
+Expo Router · Zustand ·
 Firebase (Auth + Firestore) · Reanimated 4 · react-native-svg ·
 expo-linear-gradient
 
@@ -32,13 +38,59 @@ l'installation tout de suite, avec un message clair.
 node -v                      # doit afficher v20.19.4 ou plus
 npm install
 cp .env.example .env.local   # puis remplir les clés Firebase (optionnel)
-npm start                    # puis i / a / w
+npm start                    # ouvre l'app dans le navigateur
 npm run typecheck            # tsc --noEmit
 ```
 
 **Sans clés Firebase, l'app démarre quand même** : elle bascule sur le backend
 local (AsyncStorage) et les comptes sont désactivés. Rien n'est bloqué, sauf la
 synchronisation.
+
+---
+
+## Installer sur le téléphone
+
+TitiFit est une **PWA** : le navigateur sait l'installer comme une app, sans
+passer par un store.
+
+| Plateforme | Geste |
+|---|---|
+| iOS / Safari | *Partager* → **Sur l'écran d'accueil** |
+| Android / Chrome | menu ⋮ → **Installer l'application** (ou la bannière proposée) |
+| Desktop / Chrome | icône d'installation dans la barre d'adresse |
+
+Une fois installée, l'app s'ouvre en plein écran, sans barre d'URL, avec son
+icône et son fond sombre — l'encoche et la barre d'accueil sont gérées par les
+zones sûres.
+
+> Sur iOS, l'installation ne marche **que depuis Safari** : ni Chrome ni Firefox
+> n'y proposent « Sur l'écran d'accueil ».
+
+**Hors ligne.** Un service worker garde le bundle et la page d'accueil en cache,
+donc l'app se lance sans réseau et tourne sur le backend local. Seule la
+synchronisation Firebase attend le retour du réseau.
+
+### Ce qui compose la PWA
+
+| Fichier | Rôle |
+|---|---|
+| `public/index.html` | Le document servi : viewport `viewport-fit=cover`, plein écran iOS, styles anti-rebond et anti-zoom, enregistrement du service worker |
+| `public/manifest.webmanifest` | Nom, icônes, `display: standalone`, couleurs — ce que lit le navigateur pour installer |
+| `public/sw.js` | Cache : bundle en *cache-first* (il est nommé par empreinte), navigation en *réseau d'abord*, repli hors ligne |
+| `public/icons/` | Icônes 192 / 512, version *maskable* pour Android, `apple-touch-icon` |
+| `scripts/finalize-web.mjs` | Finalise l'export : active le service worker (jamais en développement, où il servirait un bundle périmé) et préfixe les URLs du document quand le site est servi depuis un sous-chemin |
+
+Tout ce qui vit dans `public/` est copié tel quel dans `dist/` par
+`expo export`. `public/index.html` est le **gabarit** du document — Expo y
+injecte le titre, la langue, le `theme-color` et le bundle avant d'écrire
+`dist/index.html`. C'est donc là qu'on touche au `<head>`, jamais dans `dist/`.
+
+Les icônes de `public/icons/` sont dérivées de `assets/` : `icon-192` /
+`icon-512` / `apple-touch-icon` (180) redimensionnés depuis `assets/icon.png`,
+et `icon-maskable-512` composé de la paire adaptative Android
+(`android-icon-background` + `android-icon-foreground`, déjà dessinée pour être
+rognée). Après un changement de logo, les régénérer à ces tailles avec
+n'importe quel outil d'image.
 
 ---
 
@@ -49,10 +101,9 @@ vivent dans un compte, pas dans une session.
 
 ### Connecter un projet Firebase
 
-TitiFit utilise le **SDK JavaScript** de Firebase, pas `react-native-firebase`.
-Conséquence importante : il faut créer une application **Web** (`</>`) dans la
-console, et **aucun** `google-services.json` / `GoogleService-Info.plist` n'est
-nécessaire, même pour iOS et Android.
+TitiFit utilise le **SDK JavaScript** de Firebase. Il faut donc créer une
+application **Web** (`</>`) dans la console — pas une app iOS ou Android, qui
+donnerait une configuration inutilisable ici.
 
 **1. Récupérer la configuration**
 
@@ -225,10 +276,11 @@ Supabase = écrire une classe et ajouter une branche dans
 
 ---
 
-## Héberger la version web
+## Héberger
 
-Expo exporte une SPA statique dans `dist/`. Deux cibles sont configurées ;
-les deux ont été testées.
+`npm run build:web` exporte une SPA statique dans `dist/` (export Expo, puis
+`scripts/finalize-web.mjs`). Deux cibles sont configurées ; les deux ont été
+testées.
 
 | | Firebase Hosting | GitHub Pages |
 |---|---|---|
@@ -306,17 +358,23 @@ npm run build:web
 npm run preview:web     # http://localhost:3000
 ```
 
-### Ce que la version web ne fait pas
+C'est la seule façon de tester la PWA en local : le service worker n'est actif
+que sur un export, pas sur le serveur de développement. `localhost` compte comme
+origine sécurisée, donc l'installation et le mode hors ligne s'y comportent
+comme en production (couper le réseau et recharger suffit à le vérifier).
 
-C'est une app mobile servie dans un navigateur, cadrée à une largeur de
-téléphone (`WebFrame`) plutôt qu'étirée sur tout l'écran.
+### Ce que le navigateur change
 
-| Fonction | Sur le web |
+L'app est cadrée à une largeur de téléphone (`WebFrame`) plutôt qu'étirée sur
+tout l'écran : sur desktop, elle s'affiche en colonne centrée.
+
+| Fonction | Dans le navigateur |
 |---|---|
 | Retour haptique | silencieusement ignoré |
 | Choisir une photo | ouvre le sélecteur de fichiers du navigateur |
-| Partager | dépend de `navigator.share` — absent sur la plupart des navigateurs desktop |
+| Partager | dépend de `navigator.share` — présent sur téléphone, absent sur la plupart des navigateurs desktop |
 | Données locales | par navigateur : Chrome et Safari = deux appareils distincts tant qu'on n'est pas connecté |
+| Zoom à deux doigts | désactivé — la mise en page est pensée pour une largeur fixe, et iOS zoomait tout seul sur les champs de saisie |
 
 ⚠️ Les clés `EXPO_PUBLIC_FIREBASE_*` sont inlinées dans le bundle publié. C'est
 attendu : une clé API Firebase Web est un identifiant public, la sécurité repose
@@ -348,6 +406,14 @@ src/
   components/navigation/ TabBar custom
   features/              Écrans, un dossier par domaine
   utils/                 Unités, dates, maths, formatage
+
+public/                  Copié tel quel dans dist/ — la couche PWA
+  index.html             Gabarit du document (head, styles globaux, SW)
+  manifest.webmanifest   Manifeste d'installation
+  sw.js                  Service worker (cache + hors ligne)
+  icons/                 Icônes d'installation
+
+scripts/                 Outillage : vérification Firebase, finalisation du build
 ```
 
 **Règle structurante :** rien de dérivé n'est stocké. Le store ne garde que ce

@@ -7,13 +7,10 @@
     "node": ">=20.19.4"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "expo start --web",
     "typecheck": "tsc --noEmit",
     "check:firebase": "node scripts/check-firebase.mjs",
-    "build:web": "expo export --clear --platform web --output-dir dist",
+    "build:web": "expo export --clear --platform web --output-dir dist && node scripts/finalize-web.mjs dist",
     "preview:web": "npx serve -s dist",
     "deploy:web": "npm run build:web && firebase deploy --only hosting"
   },

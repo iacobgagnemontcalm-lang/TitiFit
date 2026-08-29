@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+
+    <!--
+      TitiFit est une web app utilisée surtout au téléphone, souvent installée
+      sur l'écran d'accueil. D'où ce viewport :
+        - viewport-fit=cover  : le fond passe sous l'encoche et sous la barre
+                                d'accueil ; les marges reviennent par
+                                env(safe-area-inset-*), que
+                                react-native-safe-area-context lit déjà.
+        - user-scalable=no    : le pinch-to-zoom casse une mise en page pensée
+                                pour une largeur fixe, et surtout iOS zoome tout
+                                seul en arrivant sur un champ de saisie.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+
+    <title>%WEB_TITLE%</title>
+
+    <!--
+      Installation sur l'écran d'accueil. Le manifeste porte le nom, les icônes
+      et le mode standalone ; les balises `apple-*` font le même travail sur
+      iOS, qui ignore encore une partie du manifeste.
+
+      Les chemins absolus ci-dessous valent pour un site servi à la racine
+      (Firebase Hosting, `expo start`). Sur un sous-chemin comme GitHub Pages,
+      scripts/finalize-web.mjs les préfixe au build — et le script d'en bas
+      déduit la racine réelle de l'URL du manifeste, donc rien d'autre n'est à
+      changer.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TitiFit" />
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background-color: #07070f;
+        /* Le scroll appartient aux ScrollView de l'app, jamais au document :
+           sans ça, iOS fait rebondir toute la page et Android déclenche un
+           pull-to-refresh au milieu d'une liste. */
+        overflow: hidden;
+        overscroll-behavior: none;
+        /* Pas de flash gris au tap, pas de délai de 300 ms au double-tap. */
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Une sélection de texte qui part sur un appui long donne l'impression
+         d'une page web, pas d'une app. Les champs de saisie gardent la leur. */
+      body {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      input,
+      textarea,
+      [contenteditable] {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      #root {
+        display: flex;
+        flex-direction: column;
+        /* 100dvh et pas 100vh : au téléphone, la barre d'URL se rétracte au
+           scroll et 100vh garde la hauteur d'écran pleine, ce qui pousse la
+           barre d'onglets sous le bord visible. */
+        height: 100dvh;
+        min-height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script>
+      // Service worker : démarrage instantané en visite répétée et app
+      // consultable hors ligne (voir public/sw.js). Facultatif — si
+      // l'enregistrement échoue, l'app fonctionne exactement comme avant.
+      //
+      // Uniquement sur un export : en développement, un worker qui met le
+      // bundle en cache renverrait le code d'avant au rechargement.
+      // scripts/finalize-web.mjs lève ce drapeau au moment du build.
+      window.__TITIFIT_EXPORT__ = false;
+
+      if (window.__TITIFIT_EXPORT__ && 'serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          var manifest = document.querySelector('link[rel="manifest"]');
+          if (!manifest) return;
+
+          // La racine du site se déduit de l'URL du manifeste, déjà correcte
+          // que le site soit servi à la racine ou sous /TitiFit/.
+          var base = new URL('.', manifest.href);
+
+          navigator.serviceWorker
+            .register(new URL('sw.js', base).href, { scope: base.href })
+            .catch(function () {
+              /* Pas de hors-ligne : sans conséquence pour le reste. */
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
