@@ -330,11 +330,16 @@ Le projet cible vient de `.firebaserc`, déjà versionné — pas de `firebase u
    celle qu'on oublie. En mode « Deploy from a branch » (le défaut), Pages
    publie les fichiers du dépôt tels quels : l'URL sert le README rendu par
    Jekyll, pas l'app, et le workflow ci-dessous ne tourne jamais.
-2. *Settings → Secrets and variables → Actions* → ajouter les six secrets :
-   `EXPO_PUBLIC_FIREBASE_API_KEY`, `_AUTH_DOMAIN`, `_PROJECT_ID`,
-   `_STORAGE_BUCKET`, `_MESSAGING_SENDER_ID`, `_APP_ID`
-   (mêmes valeurs que `.env.local` ; sans eux le site se déploie quand même,
-   mais en mode local sans comptes)
+2. *Settings → Secrets and variables → Actions* → ajouter **deux** secrets :
+   `EXPO_PUBLIC_FIREBASE_API_KEY` et `EXPO_PUBLIC_FIREBASE_APP_ID` (mêmes
+   valeurs que `.env.local`). Les trois valeurs dérivées de l'ID de projet ont
+   une valeur par défaut dans le workflow ; `_MESSAGING_SENDER_ID` n'est utile
+   qu'aux notifications push, pas encore utilisées. Un secret du même nom
+   l'emporte sur le défaut, pour pointer vers un autre projet Firebase.
+
+   Sans ces deux secrets, le site se déploie quand même, mais en mode local :
+   pas de comptes, pas de synchronisation, et un bandeau le dit à l'ouverture.
+   Le workflow pose alors un avertissement visible dans le résumé du run.
 3. *Firebase Authentication → Settings → Authorized domains* → ajouter
    `iacobgagnemontcalm-lang.github.io`
 
