@@ -285,7 +285,7 @@ testées.
 | | Firebase Hosting | GitHub Pages |
 |---|---|---|
 | URL | `titifit-ff0a6.web.app` | `iacobgagnemontcalm-lang.github.io/TitiFit/` |
-| Déploiement | `npm run deploy:web` | automatique à chaque push sur `main` |
+| Déploiement | `npm run deploy:web` | automatique à chaque push sur la branche par défaut |
 | Outils requis | Firebase CLI + login | aucun |
 | Connexion Firebase | **marche d'emblée** | domaine à autoriser à la main |
 | Routes profondes | vraies réécritures | contournement via `404.html` |
@@ -326,7 +326,10 @@ Le projet cible vient de `.firebaserc`, déjà versionné — pas de `firebase u
 
 **Une seule fois :**
 
-1. *Settings → Pages* → **Source : GitHub Actions**
+1. *Settings → Pages* → **Source : GitHub Actions** — étape obligatoire, et
+   celle qu'on oublie. En mode « Deploy from a branch » (le défaut), Pages
+   publie les fichiers du dépôt tels quels : l'URL sert le README rendu par
+   Jekyll, pas l'app, et le workflow ci-dessous ne tourne jamais.
 2. *Settings → Secrets and variables → Actions* → ajouter les six secrets :
    `EXPO_PUBLIC_FIREBASE_API_KEY`, `_AUTH_DOMAIN`, `_PROJECT_ID`,
    `_STORAGE_BUCKET`, `_MESSAGING_SENDER_ID`, `_APP_ID`
@@ -335,9 +338,11 @@ Le projet cible vient de `.firebaserc`, déjà versionné — pas de `firebase u
 3. *Firebase Authentication → Settings → Authorized domains* → ajouter
    `iacobgagnemontcalm-lang.github.io`
 
-**Ensuite :** chaque push sur `main` déploie tout seul
-(`.github/workflows/deploy-pages.yml`), ou *Actions → Deploy web to GitHub
-Pages → Run workflow*.
+**Ensuite :** chaque push sur la branche par défaut déploie tout seul
+(`.github/workflows/deploy-pages.yml`). Depuis une autre branche — une branche
+de travail pas encore fusionnée, par exemple — *Actions → Deploy web to GitHub
+Pages → Run workflow* fait le même déploiement, en choisissant la branche dans
+le sélecteur.
 
 Trois particularités de Pages sont gérées dans le workflow :
 

@@ -1,4 +1,10 @@
-# Déploie la version web sur GitHub Pages à chaque push.
+# Déploie la version web sur GitHub Pages à chaque push sur la branche par
+# défaut. Depuis n'importe quelle autre branche, le déclenchement manuel
+# (Actions → Run workflow) fait le même travail.
+#
+# Prérequis côté dépôt : *Settings → Pages → Source* doit être sur **GitHub
+# Actions**. En mode « Deploy from a branch », Pages publie les fichiers du
+# dépôt tels quels — donc le README, pas l'app — et ce workflow échoue.
 #
 # Alternative à Firebase Hosting (voir README). Trois particularités de Pages
 # sont traitées ici :
@@ -11,7 +17,7 @@ name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [claude/athlete-profile-gamified-app-jhc9en]
   workflow_dispatch:
 
 permissions:
